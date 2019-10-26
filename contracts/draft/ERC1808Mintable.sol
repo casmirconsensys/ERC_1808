@@ -15,33 +15,33 @@ contract AccessAdmin {
     }
 
     modifier onlySystemAdmin() {
-        require(msg.sender == systemAdmin, "不是系统管理员");
+        require(msg.sender == systemAdmin, "Not a system administrator");
         _;
     }
 
     modifier onlyBusinessAdmin() {
-        require(businessAdmin[msg.sender], "不是业务管理员");
+        require(businessAdmin[msg.sender], "Not a business administrator");
         _;
     }
 
     modifier whenNotPaused() {
-        require(!isPaused, "合约已经冻结");
+        require(!isPaused, "Contract has been frozen");
         _;
     }
 
     modifier whenPaused() {
-        require(isPaused, "合约没有冻结");
+        require(isPaused, "Contract not frozen");
         _;
     }
 
     function transferSystemAdmin(address _newSystemAdmin) external onlySystemAdmin {
-        require(_newSystemAdmin != address(0), "目标地址为零地址");
+        require(_newSystemAdmin != address(0), "Destination address is zero address");
         emit SystemAdminTransferred(systemAdmin, _newSystemAdmin);
         systemAdmin = _newSystemAdmin;
     }
 
     function setBusinessAdmin(address _businessAdmin, bool _changeType) external onlySystemAdmin {
-        require(_businessAdmin != address(0), "目标地址为零地址");
+        require(_businessAdmin != address(0), "Destination address is zero address");
         businessAdmin[_businessAdmin] = _changeType;
         emit BusinessAdminChanged(_businessAdmin, _changeType);
     }
@@ -142,39 +142,39 @@ contract MyERC1808Mintable is ERC1808, AccessAdmin {
         return chainTokenIdToLocalTokenId[_chainId-1][otherTokenId];
     }  
 
-    /// 获取账户拥有资产的数量
+    /// Get the number of assets owned by the account
     function balanceOf(address _owner) external view returns (uint256) {
         require(_owner != address(0), "");
         return ownerToNFTArray[_owner].length;
     }
    
-    /// 查询资产的拥有者
+    /// Query the owner of the asset
     function ownerOf(uint256 _tokenId) external view returns (address) {
         return tokenIdToOwner[_tokenId];
     }
 
-    /// 资产的转移
+    /// Transfer of assets
     function safeTransferFromWithExtData(address _from, address _to, uint256 _tokenId, string calldata data) external whenNotPaused payable {
         _safeTransferFrom(_from, _to, _tokenId, data);
     }
 
-    /// 资产的转移
+    /// Transfer of assets
     function safeTransferFrom(address _from, address _to, uint256 _tokenId) external whenNotPaused payable {
         _safeTransferFrom(_from, _to, _tokenId, "");
     }
 
-    /// 资产的转移
+    /// Transfer of assets
     function transferFrom(address _from, address _to, uint256 _tokenId) external
      whenNotPaused isValidToken(_tokenId) canTransfer(_tokenId) payable {
         address owner = tokenIdToOwner[_tokenId];
         require(owner != address(0),"");
         require(_to != address(0),"");
         require(owner == _from, "");
-        // require(fashionIdToComposeFashionId[_tokenId] == 0, "token已经组合");
+        // require(fashionIdToComposeFashionId[_tokenId] == 0, "Token has been combined");
         _transfer(_from, _to, _tokenId);
     }
     
-    /// 授权资产的操作权
+    /// Authorized asset operation rights
     function authorize(address _authorized, uint256 _tokenId) external whenNotPaused payable {
         address owner = tokenIdToOwner[_tokenId];
         require(owner != address(0), "");
@@ -183,23 +183,23 @@ contract MyERC1808Mintable is ERC1808, AccessAdmin {
         emit Authorized(msg.sender, _authorized, _tokenId);
     }
 
-    /// 授权账户的操作权
+    /// Authorized account operation rights
     function setAuthorizedForAll(address _operator, bool _authorized) external whenNotPaused {
         operatorToApprovals[msg.sender][_operator] = _authorized;
         emit AuthorizedForAll(msg.sender, _operator, _authorized);
     }
 
-    /// 获取资产的授权账户
+    /// Obtain an authorized account for the asset
     function getAuthorized(uint256 _tokenId) external view isValidToken(_tokenId) returns (address) {
         return tokenIdToApprovals[_tokenId];
     }
 
-    /// 验证账户是否授权给操作者
+    /// Verify that the account is authorized to the operator
     function isAuthorizedForAll(address _owner, address _operator) external view returns (bool) {
         return operatorToApprovals[_owner][_operator];
     }
  
-    /// 获取本合约总的同质的数量
+    /// Get the total amount of this contract
     function totalSupply() external view returns (uint256) {
         return nftArray.length - destroyNFTCount - 1;
     }
@@ -239,7 +239,7 @@ contract MyERC1808Mintable is ERC1808, AccessAdmin {
         require(owner != address(0), "");
         require(_to != address(0), "");
         require(owner == _from, "");
-        // require(fashionIdToComposeFashionId[_tokenId] == 0, "token已经组合");
+        // require(fashionIdToComposeFashionId[_tokenId] == 0, "Token has been combined");
         _transfer(_from, _to, _tokenId);
       
         uint256 codeSize;
@@ -253,12 +253,12 @@ contract MyERC1808Mintable is ERC1808, AccessAdmin {
 
     }
     
-    /// 获取NFTArrayLength
+    /// Get NFTArrayLength
     function getNFTArrayLength() external view returns (uint256) {
         return nftArray.length;
     }
  
-    /// 检验是某链（合约）的某资产是否在本链已经创建
+    /// Verify that an asset of a chain (contract) has been created in the chain
     function isExistTokenId(uint256 _chainId, string memory _otherChainTokenId) public view returns (bool) {
         uint256 length = myChain.getChainsCount();
         require(_chainId - 1 < length && _chainId > 0, "");
@@ -272,18 +272,18 @@ contract MyERC1808Mintable is ERC1808, AccessAdmin {
             return false;
         }
     }
-    /// 设置NFT的在其他链（合约）的资产ID
+    /// Set the asset ID of the NFT in other chains (contracts)
     function setNFTOtherChainTokenId(uint256 _tokenId, uint256 _chainId, string memory _otherChainTokenId) 
     public whenNotPaused isValidToken(_tokenId)  onlyBusinessAdmin {
         uint256 length = myChain.getChainsCount();
         require(_chainId - 1 < length && _chainId > 0, "");
-        require(!this.isExistTokenId(_chainId,_otherChainTokenId), "已经存在，不能重复绑定");
+        require(!this.isExistTokenId(_chainId,_otherChainTokenId), "Already exists, can't repeat binding");
         //  require(localTokenIdToChainTokenId[_tokenId][_chainId]);
-        // 都要检查 是否配对 chainTokenIdToLocalTokenId localTokenIdToChainTokenId
+        // Check to see if it is paired chainTokenIdToLocalTokenId localTokenIdToChainTokenId
         localTokenIdToChainTokenId[_tokenId][_chainId] = _otherChainTokenId;
     }
 
-    /// 创建资产（平台）
+    /// Create assets (platform)
     function createNFT(address _owner,string memory _worldView, string memory _baseData)
     public whenNotPaused onlyBusinessAdmin
     {
@@ -301,19 +301,19 @@ contract MyERC1808Mintable is ERC1808, AccessAdmin {
     }
     
 
-    /// 创建资产（平台） 外联转移
+    /// Create asset (platform) outbound transfer
     function createNFT(address _owner,string memory _worldView,  string memory _baseData,  uint256 _chainId, string memory _otherChainTokenId)
     public whenNotPaused onlyBusinessAdmin{
         require(_owner != address(0), "");
         uint256 length = myChain.getChainsCount();
         require(_chainId - 1 < length && _chainId > 0, "");
-        require(myChain.isEnableChain(_chainId), "此链承兑已经禁用");
+        require(myChain.isEnableChain(_chainId), "This chain acceptance has been disabled");
         require(bytes(_otherChainTokenId).length !=0, "");
 
         uint256 localTokenId = chainTokenIdToLocalTokenId[_chainId - 1][_otherChainTokenId];
         if (localTokenId != 0)
         {
-            //本链已经存在
+            //This chain already exists
             address _currentOwner = tokenIdToOwner[localTokenId];
         //     NFT storage fs1 = nftArray[localTokenId];
         //       fs.creator = msg.sender;
@@ -325,7 +325,7 @@ contract MyERC1808Mintable is ERC1808, AccessAdmin {
         }
         else
         {
-            //本链不存在
+            //This chain does not exist
             uint256 newTokenId = nftArray.length;
             require(newTokenId < 4294967296, "");
             nftArray.length += 1;
@@ -345,7 +345,7 @@ contract MyERC1808Mintable is ERC1808, AccessAdmin {
     }
 
  
-    ///销毁资产（平台）
+    ///Destruction of assets (platform)
     function destroyNFT(uint256 _tokenId) external whenNotPaused onlyBusinessAdmin isValidToken(_tokenId) {
         address _from = tokenIdToOwner[_tokenId];
         uint256 indexFrom = tokenIdToOwnerIndex[_tokenId];
@@ -374,23 +374,23 @@ contract MyERC1808Mintable is ERC1808, AccessAdmin {
 
     }
 
-    /// 管理员资产
+    /// Administrator asset
     function safeTransferByContract(uint256 _tokenId, address _to) external whenNotPaused onlyBusinessAdmin {
         require(_tokenId >= 1 && _tokenId <= nftArray.length,"");
         address owner = tokenIdToOwner[_tokenId];
         require(owner != address(0),"");
         require(_to != address(0),"");
         require(owner != _to,"");
-        // require(fashionIdToComposeFashionId[_tokenId] == 0, "token已经组合");
+        // require(fashionIdToComposeFashionId[_tokenId] == 0, "Token has been combined");
         _transfer(owner, _to, _tokenId);
     }
 
-    ///获取单个NFT
+    ///Get a single NFT
     function getNFT(uint256 _tokenId) external view isValidToken(_tokenId) returns(NFT memory nft) {
          nft = nftArray[_tokenId]; 
     }
 
-    /// 获取持有列表
+    /// Get the holding list
     function getOwnNFTIds(address _owner) external view returns(uint256[] memory tokenIds) {
         require(_owner != address(0),"");
         uint256[] storage fsArray = ownerToNFTArray[_owner];
@@ -402,7 +402,7 @@ contract MyERC1808Mintable is ERC1808, AccessAdmin {
         }
     }
 
-    ///批量获取信息
+    ///Get information in bulk
     function getNFTs(uint256[] memory _tokenIds) public view returns(NFT[] memory nfts) {
         uint256 length = _tokenIds.length;
         require(length <= 64,"");
